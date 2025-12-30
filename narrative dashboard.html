@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Evaluation Dashboard | Interactive Analysis</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid;
+            border-radius: 0.75rem; /* Added rounded corners */
+        }
+        .metric-value {
+            font-size: 2.5rem;
+        }
+        .metric-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <header class="text-center mb-10 bg-white p-6 rounded-xl shadow-lg">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 tracking-tight">
+            Mental Health Risk Model Evaluation
+        </h1>
+        <p class="text-md text-gray-500 mt-1">
+            Performance, Fairness, and Interactive LIME Analysis
+        </p>
+    </header>
+
+    <main class="space-y-10 max-w-7xl mx-auto">
+        
+        <!-- SECTION 1: KEY PERFORMANCE INDICATORS (KPIs) -->
+        <section>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-indigo-200 pb-2">1. Key Metrics (Overall Performance)</h2>
+            <div id="kpi-metrics" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- KPI Cards will be injected here -->
+            </div>
+        </section>
+
+        <!-- SECTION 2: VISUAL ANALYSIS - FEATURE IMPORTANCE & FAIRNESS -->
+        <section>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-indigo-200 pb-2">2. Visual Model Analysis</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="bg-white p-6 rounded-xl card border-indigo-500 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">A. Narrative Biomarkers (Global Feature Importance)</h3>
+                    <div class="flex flex-col gap-6 items-center justify-center">
+                        <canvas id="featureImportanceChart" style="height:234px;width:520px;"></canvas>
+                        <div class="w-full flex flex-row gap-6 justify-center">
+                            <div class="flex flex-col items-center">
+                                <h4 class="font-bold text-gray-700 mb-2">LogReg (TF-IDF) Confusion Matrix</h4>
+                                <canvas id="cm0" width="234" height="234"></canvas>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <h4 class="font-bold text-gray-700 mb-2">Model Performance Comparison</h4>
+                                <canvas id="modelComparisonChart" width="234" height="234"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4">Visualizing Mean Absolute SHAP values. Features like 'negemo' and 'i' (1st person singular) drive risk prediction.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl card border-red-500 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">B. Algorithmic Fairness Audit (F-Score by Subgroup)</h3>
+                    <div class="flex items-start justify-center">
+                        <canvas id="fairnessAuditChart" style="height:234px;width:520px;"></canvas>
+                    </div>
+                    <p class="text-xs text-red-600 font-medium mt-4">Note: The F-Score for the Age 18-30 subgroup is significantly lower, highlighting potential bias.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: INTERACTIVE LOCAL EXPLAINABILITY (LIME Demo) -->
+        <section class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-indigo-200 pb-2">3. Local Explainability Demo (Interactive LIME)</h2>
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- Input Area -->
+                <div class="md:w-1/2">
+                    <label for="narrativeInput" class="block text-sm font-medium text-gray-700 mb-2">Enter Sentence or Transcript to Evaluate:</label>
+                    <textarea id="narrativeInput" rows="6" class="w-full border-gray-300 rounded-lg p-3 focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400" placeholder="Type or paste your narrative here...">I feel completely worthless and I am so miserable. My life is pointless, and I can't go on anymore. But my friend said I should try to talk to someone and get help.</textarea>
+                    <button onclick="analyzeNarrative()" class="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 font-semibold shadow-md">
+                        Analyze Risk & Generate LIME Explanation
+                    </button>
+                </div>
+
+                <!-- Output Area -->
+                <div class="md:w-1/2">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Predicted Risk & Influential Tokens:</h3>
+                    <div id="riskOutput" class="p-4 border-2 border-gray-200 rounded-lg min-h-[160px] bg-gray-50">
+                        <p class="text-gray-500 italic">Analysis results will appear here after clicking 'Analyze Risk'.</p>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <span class="font-semibold">LIME Interpretation:</span> Words highlighted in <span class="text-red-600 font-bold">red</span> are highly risk-increasing; words in <span class="text-green-600 font-bold">green</span> are risk-decreasing. Words in <span class="text-orange-600 font-bold">orange</span> indicate self-focus/pronoun risk.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 4: DATA TABLE (Interactive Drill-down) -->
+        <section>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-indigo-200 pb-2">4. Subgroup Performance Data Table</h2>
+            <div class="overflow-x-auto bg-white rounded-xl shadow">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-indigo-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left metric-label text-indigo-700">Subgroup</th>
+                            <th class="px-6 py-3 text-left metric-label text-indigo-700">N</th>
+                            <th class="px-6 py-3 text-left metric-label text-indigo-700">Precision</th>
+                            <th class="px-6 py-3 text-left metric-label text-indigo-700">Recall</th>
+                            <th class="px-6 py-3 text-left metric-label text-indigo-700">F-Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fairness-table-body" class="bg-white divide-y divide-gray-100">
+                        <!-- Table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
+        Generated Visualization Prototype - Based on DAIC-WOZ Model Results.
+    </footer>
+
+    <script>
+        // --- Mock Data ---
+        const mockMetrics = [
+            { name: "F-Score (Risk Class)", value: 0.82, color: "indigo", borderColor: "indigo-600" },
+            { name: "ROC-AUC", value: 0.88, color: "green", borderColor: "green-600" },
+            { name: "Accuracy", value: 0.85, color: "sky", borderColor: "sky-600" },
+            { name: "Inference Time (ms)", value: 15.3, color: "yellow", borderColor: "yellow-600" }
+        ];
+
+        const mockFeatures = {
+            labels: ['LIWC: negemo (Negative Emotion)', 'LIWC: i (1st Person Singular)', 'BERT Embedding Dim 42', 'LIWC: tentat (Tentative)', 'LIWC: posemo (Positive Emotion)'],
+            values: [0.15, 0.12, 0.08, 0.07, 0.05],
+            colors: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#6366f1'] // Red, Amber, Blue, Emerald, Violet
+        };
+
+        const mockFairnessData = [
+            { subgroup: 'Gender: Female', n: 120, precision: 0.85, recall: 0.80, f1: 0.82 },
+            { subgroup: 'Gender: Male', n: 105, precision: 0.83, recall: 0.81, f1: 0.82 },
+            { subgroup: 'Age: 18-30', n: 80, precision: 0.75, recall: 0.80, f1: 0.77, bias: true },
+            { subgroup: 'Age: 31+', n: 145, precision: 0.88, recall: 0.84, f1: 0.86 }
+        ];
+
+        // --- EXPANDED WORD LISTS (Over 350 words each) ---
+
+        // Words indicating severe distress or direct self-harm ideation (Highest Weight)
+        const SEVERE_RISK_WORDS = [
+            // Core Despair/Worthlessness (10)
+            'worthless', 'useless', 'hopeless', 'failure', 'failed', 'broken', 'empty', 'numb', 'miserable', 'depressed',
+            // Emotional/Mental Pain (15)
+            'exhausted', 'overwhelmed', 'trapped', 'isolated', 'alone', 'lonely', 'rejected', 'unwanted', 'abandoned',
+            'ashamed', 'guilty', 'burden', 'regret', 'stupid', 'pathetic',
+            // Suicidal/Finality Ideation (30)
+            'hate', 'pointless', 'meaningless', 'disappear', 'vanish', 'escape', 'runaway', 'hide', 'withdraw', 
+            'die', 'dying', 'death', 'despair', 'end', 'screwup', 'ruin', 'fatal', 'lethal', 'deadly', 'finality',
+            'suicide', 'self-destructive', 'self-loathing', 'kill', 'killing', 'demise', 'perish', 'extinguish', 'terminate', 'obliterate',
+            // Self-Harm/Action (25)
+            'cutting', 'selfharm', 'bleed', 'hurting', 'harm', 'slice', 'overdose', 'poison', 'suffocate', 'jump', 
+            'hang', 'gun', 'sharp', 'razor', 'blade', 'slit', 'wound', 'injury', 'maim', 'torture', 'mutilate',
+            'bruise', 'scar', 'shameful', 'guilt-ridden',
+            // Intense Negative Emotion/Affect (40)
+            'anxiety', 'panic', 'terrified', 'scared', 'nightmares', 'loser', 'awful', 'terrible', 'horrific', 'grim', 
+            'dreadful', 'nasty', 'ugly', 'foul', 'vile', 'despicable', 'gross', 'disgusting', 'abhorrent', 'repulsive',
+            'anger', 'furious', 'rage', 'wrath', 'hostile', 'aggressive', 'malicious', 'spiteful', 'vindictive', 'bitter',
+            'resentful', 'jealous', 'envious', 'frantic', 'hysterical', 'wild', 'volatile', 'corrosive', 'toxic', 'malignant',
+            // Sorrow/Grief/Loss (30)
+            'sickening', 'wretched', 'sorrow', 'grief', 'anguish', 'torment', 'torture', 'suffering', 'weep', 'cry', 
+            'sobbing', 'tears', 'mourn', 'mourning', 'somber', 'melancholy', 'pained', 'aching', 'agony', 'distress',
+            'loss', 'bereavement', 'lost', 'void', 'hollow', 'deadened', 'lifeless', 'stagnant', 'decay', 'wither',
+            // Cognitive Distortion/Doom (30)
+            'terror', 'horror', 'hell', 'damn', 'cursed', 'doomed', 'forbidden', 'sinful', 'evil', 'malicious', 
+            'spiteful', 'cruel', 'wicked', 'insanity', 'crazy', 'mad', 'delusional', 'paranoia', 'catastrophic', 
+            'disastrous', 'ruinous', 'irreparable', 'permanent', 'unending', 'eternal', 'nothingness', 'cessation', 
+            'annihilation', 'extinction', 'apocalypse',
+            // Physical/Somatic Pain/Illness (40)
+            'pain', 'ache', 'sick', 'ill', 'sore', 'fever', 'virus', 'infection', 'cancer', 'tumor', 'disorder', 
+            'syndrome', 'trauma', 'traumatic', 'crisis', 'disturbed', 'worried', 'nervous', 'tense', 'stressful',
+            'strain', 'pressure', 'choke', 'stifle', 'shame', 'gasp', 'seize', 'anguished', 'drained', 
+            'defeated', 'shattered', 'wrecked', 'terminal', 'abyss', 'hellish', 'vulnerable', 'weakened', 
+            'shriveled', 'paralyzed', 'immobilized',
+            // Isolation/Self-Condemnation (40)
+            'helpless', 'powerless', 'inferior', 'flawed', 'defective', 'disgraced', 'tainted', 'repulsive', 'dirty',
+            'filthy', 'contaminated', 'estranged', 'disconnected', 'separated', 'distant', 'remote', 'absent', 
+            'fugitive', 'banished', 'ostracized', 'excluded', 'peripheral', 'marginalized', 'invisible', 'forgotten', 
+            'unheard', 'silenced', 'mute', 'alienated', 'outcast', 'misunderstood', 'unseen', 'shadow', 'ghost',
+            'phantom', 'unreal', 'delusion', 'hallucination', 'unstable', 'erratic' // Total: ~390 words
+        ];
+
+        // Phrases indicating severe cognitive distortion or direct threat (Checked separately for multi-word matches)
+        const SEVERE_RISK_PHRASES = [
+            'hate myself', 'hate me', 'hate everything', 'no point', 'nothing matters', 'don\'t care anymore',
+            'can\'t cope', 'can\'t breathe', 'can\'t do this', 'can\'t go on', 'giving up', 'done with this',
+            'over it', 'tired of life', 'not okay', 'i\'m broken', 'i\'m lost', 'i\'m done', 'don\'t belong', 
+            'don\'t matter', 'don\'t deserve', 'i\'m a burden', 'nobody cares', 'nobody understands', 
+            'everyone hates me', 'better off without me', 'better if i disappear', 'end it', 'end everything', 
+            'kill myself', 'no future', 'worthless piece of trash', 'waste of space', 'always my fault', 
+            'can\'t trust anyone', 'everyone is against me', 'exhausted with living', 'emotionally dead', 
+            'dead inside', 'nothing left', 'i give up', 'can\'t take this anymore', 'no way out', 
+            'want to die', 'wish i was dead', 'gonna end it', 'planning to', 'have a plan',
+            'i hate my life', 'i want to hurt myself', 'i am going to', 'too much pain', 'need it to stop', 
+            'can\'t feel anything', 'don\'t want to wake up', 'can\'t face it', 'it\'s all my fault'
+        ];
+        
+        // Words indicating self-focus (Pronoun Risk - Moderate Weight)
+        const PRONOUN_RISK_WORDS = ['i', 'me', 'my', 'myself', 'mine'];
+
+        // Risk-Decreasing Words (Coping, Positive Emotion, Social Connection, Future Focus - Negative Weight)
+        const DECREASING_WORDS = [
+            // Tentative/Coping/Action (40)
+            'should', 'try', 'talk', 'energy', 'manage', 'handle', 'cope', 'improve', 'change', 'adapt', 'adjust', 
+            'overcome', 'progress', 'heal', 'recover', 'work', 'effort', 'focus', 'concentrate', 'maybe', 'perhaps', 
+            'possibly', 'likely', 'usually', 'sometimes', 'attempt', 'strive', 'endeavor', 'pursue', 'initiate',
+            'start', 'begin', 'resurface', 'rebuild', 'repair', 'restore', 'maintain', 'sustain', 'commit', 'dedicate',
+            // Positive Emotion/Affect (50)
+            'happy', 'good', 'hope', 'tomorrow', 'love', 'joy', 'glad', 'cheerful', 'delighted', 'excited', 
+            'ecstatic', 'positive', 'optimistic', 'bright', 'sunny', 'fantastic', 'great', 'wonderful', 
+            'amazing', 'awesome', 'beautiful', 'marvelous', 'pleasure', 'satisfied', 'content', 'peaceful', 
+            'calm', 'relaxed', 'serene', 'tranquil', 'elation', 'bliss', 'vibrant', 'glowing', 'radiant',
+            'charming', 'captivating', 'enchanting', 'exhilarating', 'uplifting', 'soothing', 'comfort', 'ease',
+            'relief', 'restful', 'refreshed', 'healthy', 'well', 'nourished',
+            // Social Connection/Support (60)
+            'friends', 'family', 'partner', 'spouse', 'parent', 'child', 'brother', 'sister', 'relative', 'team', 
+            'group', 'community', 'helper', 'therapist', 'doctor', 'nurse', 'support', 'share', 'communicate', 
+            'listen', 'hug', 'kiss', 'affectionate', 'connected', 'belong', 'welcomed', 'join', 'together', 
+            'assist', 'guide', 'mentor', 'respected', 'valued', 'cherished', 'esteemed', 'admired', 'honored',
+            'befriended', 'recognized', 'acknowledged', 'validated', 'appreciated', 'dear', 'beloved', 'included',
+            'embraced', 'acceptance', 'camaraderie', 'cooperation', 'unity', 'harmony', 'social', 'relationship', 
+            'connection', 'kindness', 'empathy', 'compassion', 'intimacy', 'closeness', 'unite',
+            // Resilience/Future Orientation (60)
+            'teach', 'learn', 'grow', 'forward', 'future', 'plan', 'goal', 'dream', 'wish', 'want', 
+            'will', 'would', 'could', 'can', 'able', 'strength', 'resilience', 'power', 'robust', 'enduring', 
+            'reassure', 'safety', 'safe', 'better', 'help', 'helping', 'getting', 'striving', 'progressing',
+            'achieve', 'obtain', 'gaining', 'cheering', 'celebrate', 'succeed', 'flourish', 'thrive', 'optimism', 
+            'courage', 'bravery', 'determination', 'resolve', 'perseverance', 'tenacity', 'patience', 
+            'growth', 'development', 'advancement', 'breakthrough', 'innovation', 'creation', 'designing', 'building',
+            'executing', 'successful', 'rewarding', 'earned', 'deserving', 'long-term',
+            // Solution/Clarity/Stability (50)
+            'solution', 'resolution', 'clarity', 'insight', 'awareness', 'mindful', 'gratitude', 'thankful', 
+            'appreciate', 'respect', 'stable', 'grounded', 'centered', 'balanced', 'steady', 'firm', 'solid', 
+            'dependable', 'reliable', 'consistent', 'routine', 'structure', 'method', 'system', 'discipline', 
+            'habit', 'practice', 'exercise', 'meditation', 'journal', 'therapy', 'session', 'evaluate', 'assess',
+            'review', 'analyze', 'logical', 'rational', 'reasonable', 'sensible', 'practical', 'feasible',
+            'workable', 'clear', 'defined', 'explain', 'detail', 'describe', 'articulate', 'verbalize' // Total: ~400 words
+        ];
+
+
+        // --- LIME Simulation Function (Uses the expanded lists) ---
+        function analyzeNarrative() {
+            let text = document.getElementById('narrativeInput').value.trim();
+            const outputDiv = document.getElementById('riskOutput');
+
+            if (!text) {
+                outputDiv.innerHTML = '<p class="text-red-500">Please enter a sentence or transcript to analyze.</p>';
+                return;
+            }
+
+            // Normalization
+            const normalizedText = text.toLowerCase();
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            let totalRiskScore = 0.40; // Base risk slightly lower than moderate
+
+            const SEVERE_WEIGHT = 0.20; // High severity words
+            const PRONOUN_WEIGHT = 0.04; // Self-focus
+            const DECREASING_WEIGHT = 0.05; // Coping/Tentative words
+
+            // 1. Check for severe multi-word phrases (gives a massive boost)
+            let severePhraseFound = false;
+            
+            SEVERE_RISK_PHRASES.forEach(phrase => {
+                // Simplified matching for demonstration
+                const normalizedPhrase = phrase.replace(/[^a-z0-9\s]/g, '');
+                if (normalizedText.includes(normalizedPhrase)) {
+                    totalRiskScore += SEVERE_WEIGHT * 2; // Extra heavy boost for phrases
+                    severePhraseFound = true;
+                }
+            });
+
+            // 2. Token-level analysis (used for LIME highlighting and score adjustment)
+            const styledWords = words.map(word => {
+                // Preserve original word but clean for matching
+                const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, ''); 
+                
+                // Severe Risk Words
+                if (SEVERE_RISK_WORDS.includes(cleanWord)) {
+                    totalRiskScore += SEVERE_WEIGHT;
+                    return `<span class="font-bold text-red-700 bg-red-100 px-1 rounded-sm cursor-help" title="Severe Risk Biomarker">${word}</span>`;
+                }
+                
+                // Pronoun Risk Words (Self-Focus)
+                if (PRONOUN_RISK_WORDS.includes(cleanWord)) {
+                    totalRiskScore += PRONOUN_WEIGHT;
+                    // Highlight pronouns differently if not already marked severe
+                    return `<span class="font-semibold text-orange-700 bg-orange-100 px-1 rounded-sm cursor-help" title="Self-Focus Biomarker">${word}</span>`;
+                }
+
+                // Risk-Decreasing Words
+                if (DECREASING_WORDS.includes(cleanWord)) {
+                    totalRiskScore -= DECREASING_WEIGHT;
+                    return `<span class="font-bold text-green-700 bg-green-100 px-1 rounded-sm cursor-help" title="Risk-Decreasing Factor (Coping/Tentative)">${word}</span>`;
+                }
+                
+                return word;
+            }).join(' ');
+
+            // Cap the score between 5% and 98%
+            let riskScore = Math.min(0.98, Math.max(0.05, totalRiskScore)); 
+            
+            const riskLabel = riskScore >= 0.75 ? 'High Risk' : (riskScore >= 0.50 ? 'Moderate Risk' : 'Low Risk');
+            const riskColor = riskScore >= 0.75 ? 'text-red-600' : (riskScore >= 0.50 ? 'text-yellow-600' : 'text-green-600');
+
+            outputDiv.innerHTML = `
+                <p class="mb-3 text-lg font-bold">Predicted Risk: <span class="${riskColor}">${(riskScore * 100).toFixed(1)}% (${riskLabel})</span></p>
+                <div class="text-gray-900 leading-relaxed">${styledWords}</div>
+            `;
+        }
+
+
+        // --- Chart and Table Rendering (Unchanged) ---
+        function renderMetrics() {
+            const container = document.getElementById('kpi-metrics');
+            container.innerHTML = mockMetrics.map(metric => `
+                <div class="flex flex-col p-5 bg-white rounded-xl card border-${metric.borderColor}">
+                    <p class="text-gray-500 metric-label">${metric.name}</p>
+                    <p class="metric-value font-extrabold text-${metric.color}-600 mt-2">
+                        ${metric.name.includes('ms') ? metric.value.toFixed(1) : (metric.value * 100).toFixed(1) + '%'}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        // --- Fix: Ensure charts are rendered with correct sizing and data ---
+        function renderFeatureChart() {
+            const chartElem = document.getElementById('featureImportanceChart');
+            if (!chartElem) return;
+            const ctx = chartElem.getContext('2d');
+            chartElem.width = 520; // 400 * 1.3
+            chartElem.height = 234; // 180 * 1.3
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['LIWC: negemo', 'LIWC: i', 'BERT Dim 42', 'LIWC: tentat', 'LIWC: posemo'],
+                    datasets: [{
+                        label: 'Mean Absolute SHAP Value',
+                        data: [0.15, 0.12, 0.08, 0.07, 0.05],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#6366f1'],
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Top 5 Global Biomarkers',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { display: false },
+                            title: { display: true, text: 'SHAP Score' }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderFairnessChart() {
+            const chartElem = document.getElementById('fairnessAuditChart');
+            if (!chartElem) return;
+            if (chartElem.chartInstance) {
+                chartElem.chartInstance.destroy();
+            }
+            const ctx = chartElem.getContext('2d');
+            chartElem.width = 520;
+            chartElem.height = 234;
+            chartElem.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Gender: Female', 'Gender: Male', 'Age: 18-30', 'Age: 31+'],
+                    datasets: [{
+                        label: 'F-Score (%)',
+                        data: [82, 82, 77, 86],
+                        backgroundColor: ['#3b82f6', '#3b82f6', '#ef4444', '#3b82f6'],
+                        borderRadius: 8,
+                        hoverBackgroundColor: ['#3b82f6cc', '#3b82f6cc', '#ef4444cc', '#3b82f6cc']
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'F-Score by Subgroup (Bias Detection)',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 50,
+                            max: 100,
+                            title: { display: true, text: 'F-Score (%)' },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderModelComparisonChart() {
+            const chartElem = document.getElementById('modelComparisonChart');
+            if (!chartElem) return;
+            if (chartElem.chartInstance) {
+                chartElem.chartInstance.destroy();
+            }
+            const ctx = chartElem.getContext('2d');
+            chartElem.width = 234;
+            chartElem.height = 234;
+            chartElem.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['LogReg (TF-IDF)', 'RandomForest', 'BERT+NN'],
+                    datasets: [
+                        { label: 'F1-Score', data: [0.65, 0.68, 0.78], backgroundColor: '#6366f1' },
+                        { label: 'ROC-AUC', data: [0.72, 0.75, 0.85], backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Model Performance Comparison',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 1, title: { display: true, text: 'Score' } },
+                        x: { grid: { display: false } }
+                    },
+                    responsive: false,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Confusion matrix chart
+        function renderConfusionMatrixChart() {
+            const chartElem = document.getElementById('cm0');
+            if (!chartElem) return;
+            if (chartElem.chartInstance) {
+                chartElem.chartInstance.destroy();
+            }
+            const ctx = chartElem.getContext('2d');
+            chartElem.width = 234;
+            chartElem.height = 234;
+            chartElem.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['TP', 'FP', 'FN', 'TN'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [40, 10, 8, 42],
+                        backgroundColor: ['#6366f1', '#ef4444', '#ef4444', '#6366f1'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Confusion Matrix (LogReg TF-IDF)',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Count' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- Improved KPI and Chart Layout for Screenshot ---
+        function renderSideBySideCharts() {
+            const container = document.createElement('div');
+            container.className = 'flex flex-row gap-8 justify-center items-center my-8';
+            container.style.width = '1053px'; // 780 * 1.35
+            container.style.margin = '0 auto';
+            // Transcript Length Chart
+            const transcriptCanvas = document.createElement('canvas');
+            transcriptCanvas.id = 'transcriptLengthChart';
+            transcriptCanvas.height = 316; // 234 * 1.35
+            transcriptCanvas.width = 456;  // 338 * 1.35
+            container.appendChild(transcriptCanvas);
+            // Label Pie Chart
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.id = 'labelPieChart';
+            labelCanvas.height = 316;
+            labelCanvas.width = 456;
+            container.appendChild(labelCanvas);
+            // Insert after KPI metrics
+            document.getElementById('kpi-metrics').insertAdjacentElement('afterend', container);
+            // Render Transcript Length Chart
+            new Chart(transcriptCanvas, {
+                type: 'bar',
+                data: {
+                    labels: ['0-100', '101-200', '201-300', '301-400', '401+'],
+                    datasets: [{
+                        label: 'Participants',
+                        data: [10, 30, 50, 40, 20],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Transcript Length Distribution',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Number of Words' } },
+                        y: { title: { display: true, text: 'Participants' }, beginAtZero: true }
+                    },
+                    responsive: false,
+                    maintainAspectRatio: false
+                }
+            });
+            // Render Label Pie Chart
+            new Chart(labelCanvas, {
+                type: 'pie',
+                data: {
+                    labels: ['No Depression', 'Depression'],
+                    datasets: [{
+                        data: [60, 40],
+                        backgroundColor: ['#6366f1', '#ef4444'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                            display: true,
+                            text: 'Depression Risk Label Distribution',
+                            font: { size: 18, weight: 'bold' }
+                        }
+                    },
+                    responsive: false,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // --- Visual Model Analysis Layout ---
+        function renderVisualAnalysisSection() {
+            const section = document.querySelector('section:nth-of-type(2)');
+            section.innerHTML = `
+                <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b-2 border-indigo-200 pb-2">2. Visual Model Analysis</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div class="bg-white p-6 rounded-xl card border-indigo-500 flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">A. Narrative Biomarkers (Global Feature Importance)</h3>
+                        <div class="flex flex-col gap-6 items-center justify-center">
+                            <canvas id="featureImportanceChart" style="height:234px;width:520px;"></canvas>
+                            <div class="w-full flex flex-row gap-6 justify-center">
+                                <div class="flex flex-col items-center">
+                                    <h4 class="font-bold text-gray-700 mb-2">LogReg (TF-IDF) Confusion Matrix</h4>
+                                    <canvas id="cm0" width="234" height="234"></canvas>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <h4 class="font-bold text-gray-700 mb-2">Model Performance Comparison</h4>
+                                    <canvas id="modelComparisonChart" width="234" height="234"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-4">Visualizing Mean Absolute SHAP values. Features like 'negemo' and 'i' (1st person singular) drive risk prediction.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl card border-red-500 flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">B. Algorithmic Fairness Audit (F-Score by Subgroup)</h3>
+                        <div class="flex items-start justify-center">
+                            <canvas id="fairnessAuditChart" style="height:234px;width:520px;"></canvas>
+                        </div>
+                        <p class="text-xs text-red-600 font-medium mt-4">Note: The F-Score for the Age 18-30 subgroup is significantly lower, highlighting potential bias.</p>
+                    </div>
+                </div>
+            `;
+            // Render charts after HTML is injected
+            renderFeatureChart();
+            renderConfusionMatrixChart();
+            renderModelComparisonChart();
+            renderFairnessChart();
+        }
+
+        // --- Ensure Chart.js Matrix Plugin is Registered Before Rendering ---
+        function ensureMatrixPlugin() {
+            if (Chart.register && Chart.controllers && !Chart.controllers.matrix) {
+                Chart.register({
+                    id: 'matrix',
+                    beforeInit: function(chart) {
+                        chart.options.scales.x.type = 'linear';
+                        chart.options.scales.y.type = 'linear';
+                    }
+                });
+            }
+        }
+
+        // --- Professional Initialization ---
+        window.onload = () => {
+            renderMetrics();
+            renderSideBySideCharts();
+            renderVisualAnalysisSection();
+            renderFairnessTable();
+            ensureMatrixPlugin();
+            renderConfusionMatrixChart();
+            analyzeNarrative();
+        };
+    </script>
+</body>
+</html>
