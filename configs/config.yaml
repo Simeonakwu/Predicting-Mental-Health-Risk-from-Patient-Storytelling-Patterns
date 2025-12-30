@@ -1,0 +1,49 @@
+# Model Configuration
+model:
+  name: "bert-base-uncased"
+  max_length: 512
+  dropout: 0.3
+  num_classes: 2
+
+# Training Configuration
+training:
+  batch_size: 16
+  learning_rate: 2.0e-5
+  num_epochs: 10
+  warmup_steps: 500
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+# Data Configuration
+data:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+
+# Explainability Configuration
+explainability:
+  shap_algorithm: "partition"
+  num_background_samples: 100
+  max_samples_explain: 100
+
+# Fairness Configuration
+fairness:
+  fairness_threshold: 0.1
+  sensitive_attributes:
+    - gender
+    - age_group
+    - ethnicity
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  save_frequency: 1  # Save logs every N epochs
+
+# Output Configuration
+output:
+  model_dir: "models"
+  results_dir: "results"
+  plots_dir: "results/plots"
+  reports_dir: "results/reports"
