@@ -1,156 +1,106 @@
-📘 Narrative Biomarkers for Depression Detection
-A Machine Learning & NLP Project Using the DAIC-WOZ Dataset (MSc Data Science Dissertation)
+Predicting Mental Health Risk from Patient Storytelling Patterns
+📌 Project Overview
 
-This repository contains my MSc Data Science final project, which investigates how linguistic patterns in patient narratives can be used to detect depression risk.
-The project combines machine learning, BERT embeddings, explainable AI (XAI), and fairness auditing, and includes an interactive narrative analysis dashboard.
+This project explores how language patterns in patient storytelling can be used to predict mental health risk, particularly depression.
+Instead of relying on questionnaires or self-reports, the project analyses how people speak and express themselves to identify early warning signs.
 
-⭐ Project Summary
+The work was completed as part of an MSc Data Science project at the University of the West of England (UWE Bristol).
 
-Traditional depression screening requires expert clinicians and structured interviews. This project explores how Natural Language Processing (NLP) can support early detection by analysing how people talk about themselves, their emotions, and their experiences.
+🎯 Aim of the Project
 
-Using the DAIC-WOZ clinical interview dataset, I built an explainable machine learning system capable of predicting depression risk from text while highlighting important linguistic features and ensuring fairness.
+To build a transparent, ethical, and accurate machine learning system that can:
 
-🔍 Key Features
-✔️ 1. Machine Learning Pipeline
+Predict mental health risk from narrative text
 
-DAIC-WOZ transcript preprocessing
+Identify key narrative biomarkers (linguistic signals of distress)
 
-Feature extraction:
+Provide explainable and fair predictions suitable for healthcare decision support
 
-TF-IDF
+🧠 What the Project Does
 
-LIWC-style linguistic features
+Uses clinical interview transcripts from the DAIC-WOZ dataset
 
-BERT embeddings
+Extracts linguistic features from patient narratives
 
-Models implemented:
+Compares:
 
-Logistic Regression
+Traditional NLP methods (LIWC, TF-IDF)
 
-Random Forest
+Deep learning methods (BERT embeddings)
 
-BERT + Dense Neural Network (best model)
+Evaluates model performance using standard metrics
 
-✔️ 2. Model Performance
+Applies Explainable AI (XAI) to explain predictions
 
-Best F1-Score: 0.78
+Conducts a fairness audit to detect and reduce bias
+
+📊 Key Results
+
+The BERT-based model outperformed traditional models
+
+Achieved:
+
+F1-Score: 0.78
 
 ROC-AUC: 0.85
 
-Evaluated using stratified cross-validation
+Explainability analysis (SHAP/LIME) showed that:
 
-Includes confusion matrix and feature importance charts
+High use of first-person pronouns
 
-✔️ 3. Explainable AI (XAI)
+Negative emotion words
+are strong indicators of mental health risk
 
-SHAP global feature importance
+Fairness audit reduced gender bias in false negatives by 72%
 
-LIME-style local narrative highlighting
+🖥️ Narrative Risk Dashboard
 
-Identify narrative biomarkers such as:
+The project includes a prototype dashboard that:
 
-Self-focus language (e.g., I, me, my)
+Simulates mental health risk prediction
 
-Negative emotion terms
+Highlights words in the text that increase or reduce risk
 
-Cognitive distortions
+Demonstrates how AI decisions can be interpreted by humans
 
-✔️ 4. Fairness Audit
+⚠️ Note:
+The dashboard is a proof-of-concept and does not perform real-time clinical diagnosis.
 
-Subgroup performance analysis (gender & age)
+🛠️ Tools & Technologies
 
-Reduction in false-negative disparity after mitigation
+Python
 
-Ethical framework for responsible use
+Pandas, NumPy, Scikit-learn
 
-✔️ 5. Narrative Risk Dashboard
+Transformers (BERT)
 
-A lightweight HTML/JS dashboard that visualises:
+Explainable AI (SHAP, LIME – simulated)
 
-Feature importance
+HTML, CSS, JavaScript (Dashboard)
 
-Model comparison
+📁 Repository Structure
 
-Fairness metrics
+Depression_AVEC.ipynb – Model training, evaluation, and analysis
 
-Local narrative explanations
+Report.docx / PDF – Full MSc dissertation
 
-📄 File: narrative dashboard.html
-🖼 Ready to open in any browser.
+dashboard.html – Narrative Risk Dashboard prototype
 
-🧪 Repository Structure
-/
-├── Depression_AVEC2017.ipynb       # Main modelling notebook
-├── narrative dashboard.html        # Interactive dashboard
-├── docs/
-│     └── Dissertation.pdf          # Full MSc dissertation (optional)
-├── figures/                        # SHAP charts & evaluation plots
-├── README.md
-└── requirements.txt
+README.md – Project summary
 
-🚀 Getting Started
-1. Clone the repository
-git clone https://github.com/<your-username>/<repo-name>
-cd <repo-name>
+⚠️ Ethical Disclaimer
 
-2. Install dependencies
-pip install -r requirements.txt
+This project:
 
-3. Run the modelling notebook
+Is not a clinical diagnostic tool
 
-Open:
+Is intended for research and educational purposes only
 
-Depression_AVEC2017.ipynb
+Should only be used as a decision-support system, not as a replacement for mental health professionals
 
-4. Launch the dashboard
+👤 Author
 
-Open:
+Akwu Simeon Ojonugwa
+MSc Data Science, UWE Bristol
 
-narrative dashboard.html
-
-
-in any web browser.
-
-⚖️ Ethics & Limitations
-
-This project is not a clinical tool.
-It is intended for academic research only.
-
-Limitations include:
-
-Only DAIC-WOZ dataset used
-
-Dashboard uses simulated SHAP/LIME outputs for performance
-
-BERT model may not generalise to all populations
-
-Risk of misinterpretation without human oversight
-
-A full ethical discussion can be found in the dissertation.
-
-🧠 Skills Demonstrated
-
-This project demonstrates:
-
-NLP (TF-IDF, LIWC, BERT)
-
-Machine learning (Logistic Regression, Random Forest)
-
-Deep learning (transformers)
-
-Explainable AI (SHAP, LIME)
-
-Model fairness & bias mitigation
-
-Dashboard development (HTML, Tailwind, JS)
-
-Academic research & reporting
-
-📚 Dissertation
-
-You can find the full write-up in:
-📄 24071456 -Project final.docx
-
-✨ Acknowledgements
-
-This project was completed as part of the MSc Data Science programme at UWE Bristol.
+GitHub: https://github.com/Simeonakwu
